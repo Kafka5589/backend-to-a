@@ -1,25 +1,26 @@
 import { spawn } from 'child_process';
 
-export default async function handler(req, res) {
-  const { url } = req.query;
+export default function handler(req, res) {
+  const videoUrl = req.query.url;
 
-  if (!url) {
-    res.status(400).send('URL ausente');
+  if (!videoUrl) {
+    res.status(400).send('URL não fornecida');
     return;
   }
 
+  res.setHeader('Content-Type', 'application/octet-stream');
   res.setHeader(
     'Content-Disposition',
     'attachment; filename="video.mp4"'
   );
-  res.setHeader('Content-Type', 'video/mp4');
 
   const ytdlp = spawn('./bin/yt-dlp', [
-  '-f', 'bv*+ba/b',
-  '-o', '-',
-  url
-]);
-
+    videoUrl,
+    '-f',
+    'mp4',
+    '-o',
+    '-'
+  ]);
 
   ytdlp.stdout.pipe(res);
 
@@ -27,9 +28,8 @@ export default async function handler(req, res) {
     console.error(data.toString());
   });
 
-  ytdlp.on('close', code => {
-    if (code !== 0) {
-      res.end();
-    }
+  ytdlp.on('close', () => {
+    res.end();
   });
 }
+
